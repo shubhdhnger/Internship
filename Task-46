@@ -1,0 +1,171 @@
+Task-46
+A system needs to manage users and their profiles. Each User has exactly one Profile that contains additional details like address, phone number, and date of birth.
+
+// User.java
+package com.example.usermanagement.entity;
+
+import jakarta.persistence.*;
+
+@Entity
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String name;
+    private String email;
+    
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "profile_id", referencedColumnName = "id")
+    private Profile profile;
+    
+    // Getters and Setters
+}
+
+// Profile.java
+package com.example.usermanagement.entity;
+
+import jakarta.persistence.*;
+
+@Entity
+public class Profile {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String address;
+    private String phoneNumber;
+    private String dateOfBirth;
+    
+    // Getters and Setters
+}
+
+// UserRepository.java
+package com.example.usermanagement.repository;
+
+import com.example.usermanagement.entity.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface UserRepository extends JpaRepository<User, Long> {}
+
+// ProfileRepository.java
+package com.example.usermanagement.repository;
+
+import com.example.usermanagement.entity.Profile;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ProfileRepository extends JpaRepository<Profile, Long> {}
+
+// UserService.java
+package com.example.usermanagement.service;
+
+import com.example.usermanagement.entity.User;
+import com.example.usermanagement.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.Optional;
+
+@Service
+public class UserService {
+    @Autowired
+    private UserRepository userRepository;
+    
+    public User saveUser(User user) {
+        return userRepository.save(user);
+    }
+    
+    public Optional<User> getUserById(Long id) {
+        return userRepository.findById(id);
+    }
+    
+    public void deleteUser(Long id) {
+        userRepository.deleteById(id);
+    }
+}
+
+// ProfileService.java
+package com.example.usermanagement.service;
+
+import com.example.usermanagement.entity.Profile;
+import com.example.usermanagement.repository.ProfileRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.Optional;
+
+@Service
+public class ProfileService {
+    @Autowired
+    private ProfileRepository profileRepository;
+    
+    public Profile saveProfile(Profile profile) {
+        return profileRepository.save(profile);
+    }
+    
+    public Optional<Profile> getProfileById(Long id) {
+        return profileRepository.findById(id);
+    }
+    
+    public void deleteProfile(Long id) {
+        profileRepository.deleteById(id);
+    }
+}
+
+// UserController.java
+package com.example.usermanagement.controller;
+
+import com.example.usermanagement.entity.User;
+import com.example.usermanagement.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/users")
+public class UserController {
+    @Autowired
+    private UserService userService;
+
+    @PostMapping
+    public User createUser(@RequestBody User user) {
+        return userService.saveUser(user);
+    }
+
+    @GetMapping("/{id}")
+    public Optional<User> getUser(@PathVariable Long id) {
+        return userService.getUserById(id);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+    }
+}
+
+// ProfileController.java
+package com.example.usermanagement.controller;
+
+import com.example.usermanagement.entity.Profile;
+import com.example.usermanagement.service.ProfileService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/profiles")
+public class ProfileController {
+    @Autowired
+    private ProfileService profileService;
+
+    @PostMapping
+    public Profile createProfile(@RequestBody Profile profile) {
+        return profileService.saveProfile(profile);
+    }
+
+    @GetMapping("/{id}")
+    public Optional<Profile> getProfile(@PathVariable Long id) {
+        return profileService.getProfileById(id);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteProfile(@PathVariable Long id) {
+        profileService.deleteProfile(id);
+    }
+}
