@@ -1,0 +1,155 @@
+Task-47
+Create a simple blog application where a blog post can have multiple comments, and each comment belongs to one blog post.
+// Post.java
+package com.example.blogapp.entity;
+
+import jakarta.persistence.*;
+import java.util.List;
+
+@Entity
+public class Post {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String title;
+    private String content;
+    
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> comments;
+    
+    // Getters and Setters
+}
+
+// Comment.java
+package com.example.blogapp.entity;
+
+import jakarta.persistence.*;
+
+@Entity
+public class Comment {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String text;
+    
+    @ManyToOne
+    @JoinColumn(name = "post_id", nullable = false)
+    private Post post;
+    
+    // Getters and Setters
+}
+
+// PostRepository.java
+package com.example.blogapp.repository;
+
+import com.example.blogapp.entity.Post;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface PostRepository extends JpaRepository<Post, Long> {}
+
+// CommentRepository.java
+package com.example.blogapp.repository;
+
+import com.example.blogapp.entity.Comment;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface CommentRepository extends JpaRepository<Comment, Long> {}
+
+// PostService.java
+package com.example.blogapp.service;
+
+import com.example.blogapp.entity.Post;
+import java.util.List;
+
+public interface PostService {
+    Post createPost(Post post);
+    List<Post> getAllPosts();
+    Post getPostById(Long id);
+    void deletePost(Long id);
+}
+
+// CommentService.java
+package com.example.blogapp.service;
+
+import com.example.blogapp.entity.Comment;
+import java.util.List;
+
+public interface CommentService {
+    Comment createComment(Comment comment, Long postId);
+    List<Comment> getCommentsByPostId(Long postId);
+    void deleteComment(Long id);
+}
+
+// PostServiceImpl.java
+package com.example.blogapp.service.impl;
+
+import com.example.blogapp.entity.Post;
+import com.example.blogapp.repository.PostRepository;
+import com.example.blogapp.service.PostService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.List;
+
+@Service
+public class PostServiceImpl implements PostService {
+    @Autowired
+    private PostRepository postRepository;
+    
+    @Override
+    public Post createPost(Post post) {
+        return postRepository.save(post);
+    }
+    
+    @Override
+    public List<Post> getAllPosts() {
+        return postRepository.findAll();
+    }
+    
+    @Override
+    public Post getPostById(Long id) {
+        return postRepository.findById(id).orElse(null);
+    }
+    
+    @Override
+    public void deletePost(Long id) {
+        postRepository.deleteById(id);
+    }
+}
+
+// CommentServiceImpl.java
+package com.example.blogapp.service.impl;
+
+import com.example.blogapp.entity.Comment;
+import com.example.blogapp.entity.Post;
+import com.example.blogapp.repository.CommentRepository;
+import com.example.blogapp.repository.PostRepository;
+import com.example.blogapp.service.CommentService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.List;
+
+@Service
+public class CommentServiceImpl implements CommentService {
+    @Autowired
+    private CommentRepository commentRepository;
+    
+    @Autowired
+    private PostRepository postRepository;
+    
+    @Override
+    public Comment createComment(Comment comment, Long postId) {
+        Post post = postRepository.findById(postId).orElseThrow(() -> new RuntimeException("Post not found"));
+        comment.setPost(post);
+        return commentRepository.save(comment);
+    }
+    
+    @Override
+    public List<Comment> getCommentsByPostId(Long postId) {
+        return commentRepository.findAll();
+    }
+    
+    @Override
+    public void deleteComment(Long id) {
+        commentRepository.deleteById(id);
+    }
+}
