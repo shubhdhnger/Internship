@@ -1,0 +1,116 @@
+
+Task-43
+Create a User entity and a UserRepository interface.
+Write custom queries using @Query:
+Find a user by username.
+Get a list of users above a certain age.
+Use @Modifying to update and delete users.
+
+package com.example.demo.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.LocalDate;
+
+@Entity
+@Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(unique = true, nullable = false)
+    private String username;
+
+    @Column(nullable = false)
+    private String email;
+
+    @Column(nullable = false)
+    private String password;
+
+    @Column(nullable = false)
+    private int age;
+
+    @Column(nullable = false)
+    private LocalDate createdAt;
+}
+package com.example.demo.repository;
+
+import com.example.demo.entity.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface UserRepository extends JpaRepository<User, Long> {
+
+    // Custom Query to find user by username
+    @Query("SELECT u FROM User u WHERE u.username = :username")
+    Optional<User> findByUsername(String username);
+
+    // Custom Query to get users above a certain age
+    @Query("SELECT u FROM User u WHERE u.age > :age")
+    List<User> findUsersAboveAge(int age);
+
+    // Updating user email by username
+    @Modifying
+    @Transactional
+    @Query("UPDATE User u SET u.email = :email WHERE u.username = :username")
+    int updateEmailByUsername(String username, String email);
+
+    // Deleting a user by username
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM User u WHERE u.username = :username")
+    void deleteByUsername(String username);
+}
+package com.example.demo.service;
+
+import com.example.demo.entity.User;
+import com.example.demo.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class UserService {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    // Find user by username
+    public Optional<User> getUserByUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
+
+    // Get list of users above a certain age
+    public List<User> getUsersAboveAge(int age) {
+        return userRepository.findUsersAboveAge(age);
+    }
+
+    // Update email by username
+    @Transactional
+    public int updateUserEmail(String username, String email) {
+        return userRepository.updateEmailByUsername(username, email);
+    }
+
+    // Delete user by username
+    @Transactional
+    public void deleteUserByUsername(String username) {
+        userRepository.deleteByUsername(username);
+    }
+}
